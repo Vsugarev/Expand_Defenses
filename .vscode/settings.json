@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Expand Defenses.sln"
+    "dotnet.defaultSolution": "ProyectoPMDM.sln"
 }
