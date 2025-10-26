@@ -12,6 +12,9 @@ public class PlayerBow : MonoBehaviour
 
     private float shootCooldown = .5f;
     private float shooterTimer;
+
+
+    public Animator anim;
     // Update is called once per frame
     void Update()
     {
@@ -22,7 +25,7 @@ public class PlayerBow : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E) && shooterTimer <= 0)
         {
-            Shoot();
+            anim.SetBool("IsShooting", true);
         }
     }
 
@@ -45,5 +48,9 @@ public class PlayerBow : MonoBehaviour
         arrow.direction = aimDirection;
         shooterTimer = shootCooldown;
     }
-    
+
+    public void StopShooting()
+    {
+        anim.SetBool("IsShooting", false);
+    }   
 }
