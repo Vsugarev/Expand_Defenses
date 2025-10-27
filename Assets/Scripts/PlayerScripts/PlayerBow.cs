@@ -23,7 +23,7 @@ public class PlayerBow : MonoBehaviour
         HandleAming();
 
 
-        if (Input.GetKeyDown(KeyCode.E) && shooterTimer <= 0)
+        if (Input.GetKeyDown(KeyCode.J) && shooterTimer <= 0)
         {
             anim.SetBool("IsShooting", true);
         }

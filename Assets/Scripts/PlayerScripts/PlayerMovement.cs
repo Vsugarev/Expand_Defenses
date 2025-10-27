@@ -14,9 +14,9 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Input.GetKeyDown(KeyCode.U))
         {
-            Debug.Log("Estas presionando la Q");
+            
             playerCombant.Attack();
         }
     }

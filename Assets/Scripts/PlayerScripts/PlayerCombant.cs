@@ -50,9 +50,5 @@ public class PlayerCombant : MonoBehaviour
         anim.SetBool("IsAttacking", false);
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(attackPoint.position, weaponRange);
-    }
+
 }

@@ -1,35 +1,34 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
-    public int currentHealth;
-    public int maxHealth = 5;
-    // Start is called before the first frame update
+    public int maxHealth = 3;
+    private int currentHealth;
+    public GameObject coinPrefab; // prefabricado de la moneda
+    public int coinsToDrop = 1;
+
     void Start()
     {
         currentHealth = maxHealth;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public void ChangeHealth(int amount)
     {
         currentHealth += amount;
-        Debug.Log($"{gameObject.name} recibió {amount} de daño. Vida actual: {currentHealth}");
-
-        if (currentHealth > maxHealth)
-            currentHealth = maxHealth;
-
         if (currentHealth <= 0)
         {
-            Debug.Log($"{gameObject.name} se destruye");
-            Destroy(gameObject);
+            Die();
         }
+    }
+
+    void Die()
+    {
+        
+        for (int i = 0; i < coinsToDrop; i++)
+        {
+            Instantiate(coinPrefab, transform.position, Quaternion.identity);
+        }
+
+        Destroy(gameObject);
     }
 }

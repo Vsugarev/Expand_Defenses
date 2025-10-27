@@ -4,17 +4,22 @@ using UnityEngine;
 
 public class PlayerMagic : MonoBehaviour
 {
-    public GameObject magicPrefab;       // Prefab de la habilidad
-    public float castRange = 5f;         // Rango máximo alrededor del jugador
-    public float cooldown = 2f;          // Tiempo de reutilización
-    private float cooldownTimer;
+    [Header("Prefabs y Configuración")]
+    public GameObject lightningPrefab;
+    public GameObject spikesPrefab;
+    public float castRange = 5f;
+    public float cooldown = 2f;
 
+    [Header("Animación e Indicadores")]
     public Animator anim;
-    public GameObject rangeIndicator;    // Círculo o área visible
-    public GameObject targetIndicator;   // Marca donde apunta el ratón
+    public GameObject rangeIndicator;
+    public GameObject targetIndicator;
 
     private Camera mainCam;
-    private bool hasCastThisSpell = false; // Controla que el rayo solo se instancie una vez
+    private float cooldownTimer;
+
+    private bool hasCastThisSpell = false; // Evita duplicados por animación
+    private int currentButton; // 0 = click izquierdo, 1 = click derecho
 
     void Start()
     {
@@ -26,9 +31,16 @@ public class PlayerMagic : MonoBehaviour
         cooldownTimer -= Time.deltaTime;
         HandleTargeting();
 
-        if (Input.GetKeyDown(KeyCode.F) && cooldownTimer <= 0)
+        // Click izquierdo → rayo
+        if (Input.GetMouseButtonDown(0) && cooldownTimer <= 0)
         {
-            TryCastMagic();
+            TryCastMagic(0);
+        }
+
+        // Click derecho → spikes
+        if (Input.GetMouseButtonDown(1) && cooldownTimer <= 0)
+        {
+            TryCastMagic(1);
         }
     }
 
@@ -37,15 +49,12 @@ public class PlayerMagic : MonoBehaviour
         Vector3 mousePos = mainCam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0f;
 
-        // Calcula la distancia entre jugador y mouse
         Vector3 dir = mousePos - transform.position;
         float distance = dir.magnitude;
 
-        // Limita el punto dentro del rango
         if (distance > castRange)
             mousePos = transform.position + dir.normalized * castRange;
 
-        // Actualiza indicador visual
         if (rangeIndicator != null)
         {
             rangeIndicator.transform.position = transform.position;
@@ -58,31 +67,18 @@ public class PlayerMagic : MonoBehaviour
         }
     }
 
-    void TryCastMagic()
+    void TryCastMagic(int mouseButton)
     {
-        Vector3 mousePos = mainCam.ScreenToWorldPoint(Input.mousePosition);
-        mousePos.z = 0f;
-
-        Vector3 dir = mousePos - transform.position;
-
-        if (dir.magnitude <= castRange)
-        {
-            anim.SetBool("IsMagic", true); // Solo dispara la animación
-            cooldownTimer = cooldown;
-
-            hasCastThisSpell = false; // Resetea para permitir un nuevo cast
-        }
-        else
-        {
-            Debug.Log("Objetivo fuera de rango");
-        }
+        anim.SetBool("IsMagic", true); // Inicia animación de casting
+        cooldownTimer = cooldown;
+        hasCastThisSpell = false;
+        currentButton = mouseButton; // Guarda el botón que disparó la animación
     }
 
-    // Este método lo llamas desde el evento de animación
-    public void CastLightningEvent()
+    // Llamado desde el Animation Event
+    public void CastMagicEvent()
     {
-        if (hasCastThisSpell) return; // Evita duplicados
-        hasCastThisSpell = true;
+        if (hasCastThisSpell) return; // Evita múltiples instanciaciones
 
         Vector3 mousePos = mainCam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0f;
@@ -91,9 +87,19 @@ public class PlayerMagic : MonoBehaviour
         if (dir.magnitude > castRange)
             mousePos = transform.position + dir.normalized * castRange;
 
-        Instantiate(magicPrefab, mousePos, Quaternion.identity);
+        if (currentButton == 0) // Click izquierdo → rayo
+        {
+            Instantiate(lightningPrefab, mousePos, Quaternion.identity);
+        }
+        else if (currentButton == 1) // Click derecho → spikes
+        {
+            Instantiate(spikesPrefab, mousePos, Quaternion.identity);
+        }
+
+        hasCastThisSpell = true;
     }
 
+    // Llamado desde el Animation Event al terminar la animación
     public void StopMagic()
     {
         anim.SetBool("IsMagic", false);

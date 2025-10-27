@@ -6,51 +6,144 @@ public class EnemyPathFollower : MonoBehaviour
 {
     public Waypoint currentWaypoint;
     public float speed = 2f;
-    public float maxOffset = 0.3f; // máxima desviación
+    public float chaseSpeed = 3f;
+    public float stopDistance = 0.1f;
 
     private Vector3 targetPosition;
-    private Vector2 pathOffset;
+    private Transform player;
+    private bool isChasing = false;
+
+    private Animator anim;
+    private SpriteRenderer spriteRenderer;
+    private Rigidbody2D rb;
 
     void Start()
     {
-        // Genera un offset único para este enemigo
-        pathOffset = Random.insideUnitCircle * maxOffset;
+        anim = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        rb = GetComponent<Rigidbody2D>();
 
-        SetTargetPosition();
-        transform.position = targetPosition;
+        if (currentWaypoint == null)
+            currentWaypoint = FindClosestWaypoint();
+
+        transform.position = transform.position;
+        ChooseNextWaypoint();
     }
 
     void Update()
     {
-        if (currentWaypoint == null) return;
+        Vector3 moveDir = Vector3.zero;
 
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
-
-        Vector3 dir = targetPosition - transform.position;
-        if (dir != Vector3.zero)
+        if (isChasing && player != null)
         {
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, angle);
+            moveDir = (player.position - transform.position);
+            if (moveDir.magnitude > stopDistance)
+                moveDir.Normalize();
+            rb.velocity = moveDir * chaseSpeed;
+        }
+        else
+        {
+            moveDir = (targetPosition - transform.position);
+            if (moveDir.magnitude > stopDistance)
+                moveDir.Normalize();
+            rb.velocity = moveDir * speed;
+
+            if (Vector3.Distance(transform.position, targetPosition) < stopDistance)
+            {
+                if (currentWaypoint.isEndPoint)
+                    ReachEndPoint();
+                else
+                    ChooseNextWaypoint();
+            }
         }
 
-        if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
+        UpdateAnimator(moveDir);
+    }
+
+    public void ChooseNextWaypoint()
+    {
+        if (currentWaypoint != null && currentWaypoint.nextWaypoints.Count > 0)
         {
-            if (currentWaypoint.nextWaypoints.Count > 0)
+            currentWaypoint = currentWaypoint.nextWaypoints[Random.Range(0, currentWaypoint.nextWaypoints.Count)];
+            targetPosition = currentWaypoint.transform.position;
+        }
+        else if(currentWaypoint != null)
+        {
+            targetPosition = currentWaypoint.transform.position;
+        }
+    }
+
+    public Waypoint FindClosestWaypoint()
+    {
+        Waypoint[] allWaypoints = FindObjectsOfType<Waypoint>();
+        Waypoint closest = null;
+        float minDist = Mathf.Infinity;
+
+        foreach (Waypoint wp in allWaypoints)
+        {
+            float dist = Vector3.Distance(transform.position, wp.transform.position);
+            if (dist < minDist)
             {
-                currentWaypoint = currentWaypoint.nextWaypoints[Random.Range(0, currentWaypoint.nextWaypoints.Count)];
-                SetTargetPosition();
+                minDist = dist;
+                closest = wp;
+            }
+        }
+
+        return closest;
+    }
+
+    void UpdateAnimator(Vector3 moveDir)
+    {
+        if (moveDir != Vector3.zero)
+        {
+            float absX = Mathf.Abs(moveDir.x);
+            float absY = Mathf.Abs(moveDir.y);
+
+            if (absX > absY)
+            {
+                anim.SetFloat("moveX", moveDir.x);
+                anim.SetFloat("moveY", 0);
+                spriteRenderer.flipX = moveDir.x > 0;
             }
             else
             {
-                Destroy(gameObject);
+                anim.SetFloat("moveX", 0);
+                anim.SetFloat("moveY", moveDir.y);
             }
+        }
+        else
+        {
+            anim.SetFloat("moveX", 0);
+            anim.SetFloat("moveY", 0);
         }
     }
 
-    void SetTargetPosition()
+    void ReachEndPoint()
     {
-        Vector3 basePos = currentWaypoint.transform.position;
-        targetPosition = new Vector3(basePos.x + pathOffset.x, basePos.y + pathOffset.y, basePos.z);
+        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth != null)
+            playerHealth.ChangeHealth(-1);
+
+        Destroy(gameObject);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            player = collision.transform;
+            isChasing = true;
+            MusicManager.Instance.EnemyStartedChasing();
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            isChasing = false;
+            player = null;
+            MusicManager.Instance.EnemyStoppedChasing();
+        }
     }
 }
-

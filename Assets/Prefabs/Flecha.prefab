@@ -174,8 +174,9 @@ MonoBehaviour:
   rb: {fileID: 824217726015246121}
   direction: {x: 1, y: 0}
   lifeSpawn: 2
-  speed: 3
+  speed: 5
   damage: 1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 512
+  target: {fileID: 0}
